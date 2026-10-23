@@ -52,7 +52,7 @@ def model():
         assert len(instruments)>=2
         t=time.perf_counter()
         h=Alpha158(instruments=instruments,start_time="2016-01-01",end_time="2017-12-29",
-                   label=([],[]),infer_processors=[],learn_processors=[])
+                   label=(["$close"],["CURRENT_CLOSE_PLACEHOLDER_DISCARDED"]),infer_processors=[],learn_processors=[])
         features=h.fetch(col_set="feature")
         assert features.shape[1]==158
         status.update(feature_success=True,feature_shape=list(features.shape),feature_seconds=time.perf_counter()-t)
