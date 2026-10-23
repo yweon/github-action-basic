@@ -1,0 +1,42 @@
+name: Phase21 offline dependency proof
+on:
+  push:
+    branches: [phase21-offline-20261023]
+    paths: [phase21_offline_build.py, .github/workflows/phase21-offline.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: windows-2022, target: bt}
+          - {os: windows-2022, target: qlib}
+          - {os: ubuntu-22.04, target: qlib}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.14'
+          architecture: x64
+      - name: Build and validate offline environment
+        run: python phase21_offline_build.py ${{ matrix.target }}
+      - name: Preserve wheelhouses and exact failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase21-${{ matrix.target }}-${{ matrix.os }}-cp312-x64
+          path: |
+            bundle/*/wheels
+            bundle/*/logs
+            bundle/*/status.json
+            bundle/*/manifest.json
+            bundle/*/requirements.lock
+            bundle/*/constraints.txt
+            bundle/*/source-pinned.zip
+          retention-days: 14
+          if-no-files-found: warn
