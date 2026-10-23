@@ -20,7 +20,7 @@ def run(name,cmd,cwd=None,extra=None):
     status["stages"].append({"name":name,"argv":[str(x) for x in cmd],"exit_code":r.returncode,
                             "wall_seconds":time.perf_counter()-t})
     print(name,r.returncode,flush=True)
-    if r.returncode: raise RuntimeError(name+" failed; see log")
+    if r.returncode: print(r.stdout[-16000:],flush=True); raise RuntimeError(name+" failed; see log")
     return r.stdout
 def pip(name,*args,python=sys.executable):
     return run(name,[python,"-m","pip","--retries","0","--timeout","45",*args])
@@ -44,13 +44,14 @@ try:
             "pip","setuptools","wheel","setuptools-scm","cython")
         shutil=__import__("shutil")
         shutil.make_archive(str(root/"source-pinned"),"zip",source)
+        status["source_archive_sha256"]=hashlib.sha256((root/"source-pinned.zip").read_bytes()).hexdigest()
     manifests=[]; lock=[]
     for f in sorted(wheels.glob("*.whl")):
         with zipfile.ZipFile(f) as z:
             meta=BytesParser().parsebytes(z.read(next(n for n in z.namelist() if n.endswith(".dist-info/METADATA"))))
         sha=hashlib.sha256(f.read_bytes()).hexdigest()
-        manifests.append({"filename":f.name,"sha256":sha,"size":f.stat().st_size,"name":meta["Name"],
-                          "version":meta["Version"],"license":meta["License"],"license_expression":meta["License-Expression"]})
+        manifests.append({"filename":f.name,"sha256":sha,"size":f.stat().st_size,"name":str(meta["Name"]),
+                          "version":str(meta["Version"]),"license":str(meta["License"] or ""),"license_expression":str(meta["License-Expression"] or "")})
         lock.append(f'{meta["Name"]}=={meta["Version"]} --hash=sha256:{sha}')
     (root/"manifest.json").write_text(json.dumps(manifests,indent=2),encoding="utf-8")
     (root/"requirements.lock").write_text("\n".join(lock)+"\n",encoding="utf-8")
