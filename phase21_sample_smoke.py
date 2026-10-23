@@ -13,7 +13,7 @@ def main():
             text=(folder/name).read_text()
             print("PROOF_FILE "+json.dumps({"artifact":str(folder),"name":name,"text":text}),flush=True)
         statuses.append(json.loads((folder/"status.json").read_text()))
-    qfolder=next(p.parent for p in Path("downloads").rglob("status.json") if json.loads(p.read_text())["target"]=="qlib")
+    qfolder=next(p.parent for p in Path("downloads").rglob("status.json") if json.loads(p.read_text())["target"]=="qlib" and "Linux" in json.loads(p.read_text())["platform"])
     venv.create(root/"venv",with_pip=True)
     python=(root/"venv/bin/python").resolve()
     cmd=[str(python),"-m","pip","--isolated","install","--no-index","--find-links",str((qfolder/"wheels").resolve()),
